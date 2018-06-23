@@ -1,6 +1,6 @@
 #lang racket
 
-(require "server.rkt" "cmd.rkt" "env.rkt" 
+(require "server.rkt" "cmd.rkt" "env.rkt" "array.rkt"
          "../solution.rkt" 
          (only-in racket [remove-duplicates unique])
          (only-in "smtlib2.rkt" reset set-option check-sat get-model get-unsat-core push pop)
@@ -25,11 +25,16 @@
 
 
 (define (solver-assert self bools [typecheck #f])
+  (writeln "IN SOLVER-ASSERT")
   (set-solver-asserts! self 
     (append (solver-asserts self)
             (for/list ([b bools] #:unless (equal? b #t))
-              (unless (or (boolean? b) (and (term? b) (equal? @boolean? (term-type b))))
-                (error 'assert "expected a boolean value, given ~s" b))
+              (unless (or (boolean? b) 
+                          (and (term? b) (equal? @boolean? (term-type b)))
+                          (or (assert-array-declare? b)
+                              (assert-array-select? b)
+                              (assert-array-store? b)))
+                (error 'assert "expected a boolean or array-assert value, given ~s" b))
               (when typecheck (typecheck b))
               b))))
 

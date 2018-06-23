@@ -2,8 +2,9 @@
 
 (require (only-in "smtlib2.rkt" assert minimize maximize
                   check-sat get-model get-unsat-core
-                  true false)
-         "env.rkt" "enc.rkt" "dec.rkt"
+                  true false
+                  declare-array array-select array-store)
+         "env.rkt" "enc.rkt" "dec.rkt" "array.rkt"
          (only-in "../../base/core/term.rkt" constant? term-type solvable-default)
          (only-in "../../base/core/function.rkt" fv function? function-domain function-range)
          (only-in "../../base/core/bool.rkt" @boolean?)
@@ -23,7 +24,23 @@
 ; definitions.  This procedure will not emit any other commands.
 (define (encode env asserts mins maxs)
   (for ([a asserts])
-    (assert (enc a env)))
+    ; handle non-boolean "array asserts"
+    (writeln "IN ENCODE")
+    (cond
+      [(assert-array-declare? a)
+       (match-define (assert-array-declare arr) a)
+       (define asym (array-var arr))
+       (declare-array asym)]
+      [(assert-array-select? a)
+       (match-define (assert-array-select arr idx val) a)
+       (define asym (array-var arr))
+       (array-select asym (enc idx env) (enc val env))]
+      [(assert-array-store? a)
+       (match-define (assert-array-store arr idx val new-arr) a)
+       (define asym (array-var arr))
+       (define new-asym (array-var new-arr))
+       (array-store asym (enc idx env) (enc val env) new-asym)]
+      [else (assert (enc a env))]))
   (for ([m mins])
     (minimize (enc m env)))
   (for ([m maxs])

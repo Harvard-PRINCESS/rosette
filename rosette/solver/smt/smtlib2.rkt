@@ -30,6 +30,16 @@
 (define (minimize t)    (printf-smt "(minimize ~a)\n" t))
 (define (maximize t)    (printf-smt "(maximize ~a)\n" t))
 
+; Array commands
+(define (array-select a i v)
+  (printf-smt "(assert (= (select ~a ~a) ~a))\n" a i v))
+
+(define (array-store a i v n)
+  (printf-smt "(assert (= (store ~a ~a ~a) ~a))\n" a i v n))
+
+(define (declare-array a)
+  (printf-smt "(declare-const ~a (Array (_ BitVec 8) (_ BitVec 8)))\n" a))
+
 ; Declarations and definitions
 (define (declare-const id type)
   (printf-smt "(declare-const ~a ~a)\n" id type))
@@ -95,5 +105,4 @@
 
 (define (exists vars body)
   (quantified 'exists vars body))
-
 
